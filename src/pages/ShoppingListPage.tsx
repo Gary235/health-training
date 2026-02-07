@@ -11,7 +11,7 @@ export default function ShoppingListPage() {
   const { activeMealPlan } = useAppSelector((state) => state.plans);
   const [items, setItems] = useState<ShoppingListItem[]>([]);
   const [groupedItems, setGroupedItems] = useState<{ [category: string]: ShoppingListItem[] }>({});
-  const [groupingMode, setGroupingMode] = useState<GroupingMode>('category');
+  const [groupingMode, setGroupingMode] = useState<GroupingMode>('day');
 
   useEffect(() => {
     if (activeMealPlan) {
@@ -76,6 +76,42 @@ export default function ShoppingListPage() {
   const checkedCount = items.filter((item) => item.checked).length;
   const progressPercent = items.length > 0 ? Math.round((checkedCount / items.length) * 100) : 0;
 
+  // Create a map of day labels to dates for proper date sorting
+  const dayLabelToDate = new Map<string, Date>();
+  if (activeMealPlan) {
+    const startDate = new Date();
+    startDate.setHours(0, 0, 0, 0);
+    const endDate = new Date(startDate);
+    endDate.setDate(endDate.getDate() + 7);
+
+    activeMealPlan.dailyPlans
+      .filter((plan) => {
+        const planDate = new Date(plan.date);
+        return planDate >= startDate && planDate <= endDate;
+      })
+      .forEach((plan) => {
+        const date = new Date(plan.date);
+        const label = date.toLocaleDateString('en-US', {
+          weekday: 'long',
+          month: 'short',
+          day: 'numeric',
+        });
+        dayLabelToDate.set(label, date);
+      });
+  }
+
+  // Sort grouped items entries by date when in day mode
+  const sortedGroupEntries = Object.entries(groupedItems).sort(([keyA], [keyB]) => {
+    if (groupingMode === 'day') {
+      const dateA = dayLabelToDate.get(keyA);
+      const dateB = dayLabelToDate.get(keyB);
+      if (dateA && dateB) {
+        return dateA.getTime() - dateB.getTime();
+      }
+    }
+    return keyA.localeCompare(keyB);
+  });
+
   if (!activeMealPlan) {
     return (
       <div className="min-h-screen bg-neutral-50 flex items-center justify-center p-4">
@@ -97,11 +133,11 @@ export default function ShoppingListPage() {
   return (
     <div className="min-h-screen bg-neutral-50 p-4">
       <div className="max-w-4xl mx-auto space-y-6">
-        <div className="flex justify-between items-center">
+        <div className="space-y-4">
           <Button variant="ghost" onClick={() => navigate('/daily')}>
             ← Back to Daily View
           </Button>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             <Button
               variant={groupingMode === 'category' ? 'default' : 'secondary'}
               size="sm"
@@ -158,7 +194,7 @@ export default function ShoppingListPage() {
         </Card>
 
         <div className="space-y-6">
-          {Object.entries(groupedItems).map(([groupKey, groupItems]) => (
+          {sortedGroupEntries.map(([groupKey, groupItems]) => (
             <Card key={groupKey}>
               <CardHeader>
                 <CardTitle className="text-md">{groupKey}</CardTitle>

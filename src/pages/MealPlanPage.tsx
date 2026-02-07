@@ -22,6 +22,24 @@ export default function MealPlanPage() {
     }
   }, [dispatch, profile]);
 
+  // Autoselect the current day when meal plan loads
+  useEffect(() => {
+    if (activeMealPlan && activeMealPlan.dailyPlans.length > 0) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const currentDayIndex = activeMealPlan.dailyPlans.findIndex((day: DailyMealPlan) => {
+        const dayDate = new Date(day.date);
+        dayDate.setHours(0, 0, 0, 0);
+        return dayDate.getTime() === today.getTime();
+      });
+
+      if (currentDayIndex !== -1) {
+        setSelectedDayIndex(currentDayIndex);
+      }
+    }
+  }, [activeMealPlan]);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-neutral-50 flex items-center justify-center">
