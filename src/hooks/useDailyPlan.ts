@@ -84,7 +84,7 @@ export function useDailyPlan() {
 
     // Update or add meal log
     const existingIndex = currentLog.mealLogs.findIndex(
-      (log) => log.mealId === mealLog.mealId
+      (log: MealLog) => log.mealId === mealLog.mealId
     );
 
     let updatedMealLogs;
@@ -128,7 +128,7 @@ export function useDailyPlan() {
 
     // Update or add training log
     const existingIndex = currentLog.trainingLogs.findIndex(
-      (log) => log.sessionId === trainingLog.sessionId
+      (log: TrainingLog) => log.sessionId === trainingLog.sessionId
     );
 
     let updatedTrainingLogs;
@@ -172,11 +172,11 @@ export function useDailyPlan() {
   };
 
   const getMealLog = (mealId: string): MealLog | undefined => {
-    return todayLog?.mealLogs.find((log) => log.mealId === mealId);
+    return todayLog?.mealLogs.find((log: MealLog) => log.mealId === mealId);
   };
 
   const getTrainingLog = (sessionId: string): TrainingLog | undefined => {
-    return todayLog?.trainingLogs.find((log) => log.sessionId === sessionId);
+    return todayLog?.trainingLogs.find((log: TrainingLog) => log.sessionId === sessionId);
   };
 
   return {

@@ -57,7 +57,7 @@ export default function MetricsPage() {
   };
 
   const chartData = metrics
-    .map((m) => ({
+    .map((m: BodyMetrics) => ({
       date: new Date(m.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
       weight: m.weight || null,
       bodyFat: m.bodyFat || null,
@@ -243,7 +243,7 @@ export default function MetricsPage() {
               </CardContent>
             </Card>
 
-            {chartData.some((d) => d.bodyFat !== null) && (
+            {chartData.some((d: { date: string; weight: number | null; bodyFat: number | null }) => d.bodyFat !== null) && (
               <Card>
                 <CardHeader>
                   <CardTitle>Body Fat Progress</CardTitle>

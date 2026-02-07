@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAppSelector } from '../store';
 import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
+import type { DailyLog } from '../types';
 import {
   User,
   MapPin,
@@ -30,7 +31,7 @@ export default function ProfilePage() {
   const totalLogs = logs.length;
   const recentLogs = logs.slice(-7);
   const avgAdherence = recentLogs.length > 0
-    ? Math.round(recentLogs.reduce((sum, log) => sum + log.overallAdherence, 0) / recentLogs.length)
+    ? Math.round(recentLogs.reduce((sum: number, log: DailyLog) => sum + log.overallAdherence, 0) / recentLogs.length)
     : 0;
 
   const joinDate = profile.createdAt
@@ -39,7 +40,7 @@ export default function ProfilePage() {
 
   const activityLevel = profile.bodySpecs.activityLevel
     .split('_')
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(' ');
 
   return (
@@ -180,7 +181,7 @@ export default function ProfilePage() {
                     <div>
                       <span className="text-neutral-600 block mb-2">Equipment</span>
                       <div className="flex flex-wrap gap-1.5">
-                        {profile.preferences.equipmentAvailable.slice(0, 4).map((equipment) => (
+                        {profile.preferences.equipmentAvailable.slice(0, 4).map((equipment: string) => (
                           <span
                             key={equipment}
                             className="px-2 py-1 bg-blue-100 text-blue-700 rounded-md text-xs capitalize"
@@ -200,7 +201,7 @@ export default function ProfilePage() {
                     <div>
                       <span className="text-neutral-600 block mb-2">Dietary</span>
                       <div className="flex flex-wrap gap-1.5">
-                        {profile.preferences.dietaryRestrictions.map((restriction) => (
+                        {profile.preferences.dietaryRestrictions.map((restriction: string) => (
                           <span
                             key={restriction}
                             className="px-2 py-1 bg-green-100 text-green-700 rounded-md text-xs capitalize"
@@ -277,7 +278,7 @@ export default function ProfilePage() {
                   <div>
                     <span className="text-sm text-neutral-600 block mb-2">Training Days</span>
                     <div className="flex flex-wrap gap-2">
-                      {Object.entries(profile.schedule.trainingDays).map(([day, config]) => (
+                      {Object.entries(profile.schedule.trainingDays).map(([day, config]: [string, { available: boolean }]) => (
                         <div
                           key={day}
                           className={`px-3 py-1.5 rounded-lg text-sm font-medium ${

@@ -38,7 +38,7 @@ export default function HistoryPage() {
 
   const getLogForDate = (day: number): DailyLog | undefined => {
     const date = new Date(selectedYear, selectedMonth, day);
-    return logs.find((log) => {
+    return logs.find((log: DailyLog) => {
       const logDate = new Date(log.date);
       return (
         logDate.getFullYear() === date.getFullYear() &&
@@ -68,9 +68,9 @@ export default function HistoryPage() {
   const monthStats = {
     totalDays: logs.length,
     avgAdherence: logs.length > 0
-      ? Math.round(logs.reduce((sum, log) => sum + log.overallAdherence, 0) / logs.length)
+      ? Math.round(logs.reduce((sum: number, log: DailyLog) => sum + log.overallAdherence, 0) / logs.length)
       : 0,
-    perfectDays: logs.filter((log) => log.overallAdherence === 100).length,
+    perfectDays: logs.filter((log: DailyLog) => log.overallAdherence === 100).length,
   };
 
   return (

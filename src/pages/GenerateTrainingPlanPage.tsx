@@ -50,12 +50,12 @@ export default function GenerateTrainingPlanPage() {
   }
 
   const availableDays = Object.entries(profile.schedule.trainingDays)
-    .filter(([, availability]) => availability.available)
+    .filter(([, availability]: [string, { available: boolean; location?: string }]) => availability.available)
     .map(([day]) => day);
 
   const trainingDaysWithLocation = Object.entries(profile.schedule.trainingDays)
-    .filter(([, availability]) => availability.available)
-    .map(([day, availability]) => ({
+    .filter(([, availability]: [string, { available: boolean; location?: string }]) => availability.available)
+    .map(([day, availability]: [string, { available: boolean; location?: string }]) => ({
       day,
       location: availability.location || profile.preferences.workoutLocation || 'home',
     }));

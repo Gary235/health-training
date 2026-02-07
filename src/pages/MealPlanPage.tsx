@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../co
 import { Button } from '../components/ui/button';
 import { Select } from '../components/ui/select';
 import MealCard from '../components/plans/MealCard';
+import type { DailyMealPlan, Meal } from '../types';
 
 export default function MealPlanPage() {
   const navigate = useNavigate();
@@ -75,7 +76,7 @@ export default function MealPlanPage() {
                 value={selectedDayIndex.toString()}
                 onChange={(e) => setSelectedDayIndex(parseInt(e.target.value))}
               >
-                {activeMealPlan.dailyPlans.map((day, index) => (
+                {activeMealPlan.dailyPlans.map((day: DailyMealPlan, index: number) => (
                   <option key={index} value={index}>
                     Day {index + 1} - {new Date(day.date).toLocaleDateString()}
                   </option>
@@ -115,7 +116,7 @@ export default function MealPlanPage() {
 
             <div className="space-y-4">
               <h2 className="text-lg font-semibold text-neutral-800">Meals</h2>
-              {selectedDay.meals.map((meal) => (
+              {selectedDay.meals.map((meal: Meal) => (
                 <MealCard key={meal.id} meal={meal} dayIndex={selectedDayIndex} />
               ))}
             </div>

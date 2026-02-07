@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../co
 import { Button } from '../components/ui/button';
 import { Select } from '../components/ui/select';
 import TrainingSessionCard from '../components/plans/TrainingSessionCard';
+import type { TrainingSession } from '../types';
 
 export default function TrainingPlanPage() {
   const navigate = useNavigate();
@@ -49,7 +50,7 @@ export default function TrainingPlanPage() {
 
   // Group sessions by week
   const weeks: { [key: number]: typeof activeTrainingPlan.sessions } = {};
-  activeTrainingPlan.sessions.forEach((session) => {
+  activeTrainingPlan.sessions.forEach((session: TrainingSession) => {
     const sessionDate = new Date(session.date);
     const startDate = new Date(activeTrainingPlan.startDate);
     const weekNumber = Math.floor((sessionDate.getTime() - startDate.getTime()) / (7 * 24 * 60 * 60 * 1000));
@@ -87,7 +88,7 @@ export default function TrainingPlanPage() {
                 <div>
                   <h4 className="text-sm font-semibold mb-2 text-neutral-800">Focus Areas</h4>
                   <div className="flex flex-wrap gap-2">
-                    {activeTrainingPlan.focusAreas.map((area, index) => (
+                    {activeTrainingPlan.focusAreas.map((area: string, index: number) => (
                       <span key={index} className="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm capitalize">
                         {area}
                       </span>
@@ -116,7 +117,7 @@ export default function TrainingPlanPage() {
         <div className="space-y-4">
           <h2 className="text-lg font-semibold text-neutral-800">Training Sessions</h2>
           {selectedSessions.length > 0 ? (
-            selectedSessions.map((session) => (
+            selectedSessions.map((session: TrainingSession) => (
               <TrainingSessionCard key={session.id} session={session} />
             ))
           ) : (
