@@ -20,10 +20,6 @@ Your training plans should:
 
 Return the training plan as a valid JSON object matching the TrainingPlan type structure.`;
 
-  const availableDays = Object.entries(schedule.trainingDays)
-    .filter(([, availability]) => availability.available)
-    .map(([day]) => day);
-
   // Build training schedule with locations
   const trainingScheduleDetails = Object.entries(schedule.trainingDays)
     .filter(([, availability]) => availability.available)

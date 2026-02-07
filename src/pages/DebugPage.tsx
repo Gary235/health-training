@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { db } from '../services/db/database';
-import type { UserProfile } from '../types';
 
 export default function DebugPage() {
   const [dbData, setDbData] = useState<any>(null);

@@ -40,7 +40,7 @@ CURRENT MEAL:
 - Time: ${meal.scheduledTime}
 - Recipe: ${meal.recipe.name}
 - Description: ${meal.recipe.description}
-- Ingredients: ${meal.recipe.ingredients.map(i => `${i.amount}${i.unit} ${i.name}`).join(', ')}
+- Ingredients: ${meal.recipe.ingredients.map((i: any) => `${i.amount}${i.unit} ${i.name}`).join(', ')}
 - Prep Time: ${meal.recipe.prepTime} min
 - Cook Time: ${meal.recipe.cookTime} min
 - Nutrition: ${meal.recipe.nutrition.calories} cal, ${meal.recipe.nutrition.protein}g protein, ${meal.recipe.nutrition.carbohydrates}g carbs, ${meal.recipe.nutrition.fat}g fat
