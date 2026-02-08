@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../co
 import { Button } from '../components/ui/button';
 import { Select } from '../components/ui/select';
 import MealCard from '../components/plans/MealCard';
+import LoadingOverlay from '../components/common/LoadingOverlay';
 import type { DailyMealPlan, Meal } from '../types';
 
 export default function MealPlanPage() {
@@ -41,11 +42,7 @@ export default function MealPlanPage() {
   }, [activeMealPlan]);
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-neutral-50 flex items-center justify-center">
-        <p>Loading...</p>
-      </div>
-    );
+    return <LoadingOverlay show={true} text="Loading meal plan..." />;
   }
 
   if (!activeMealPlan) {

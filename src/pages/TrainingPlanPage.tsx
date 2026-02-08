@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../co
 import { Button } from '../components/ui/button';
 import { Select } from '../components/ui/select';
 import TrainingSessionCard from '../components/plans/TrainingSessionCard';
+import LoadingOverlay from '../components/common/LoadingOverlay';
 import type { TrainingSession } from '../types';
 
 export default function TrainingPlanPage() {
@@ -23,11 +24,7 @@ export default function TrainingPlanPage() {
   }, [dispatch, profile]);
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-neutral-50 flex items-center justify-center">
-        <p>Loading...</p>
-      </div>
-    );
+    return <LoadingOverlay show={true} text="Loading training plan..." />;
   }
 
   if (!activeTrainingPlan) {

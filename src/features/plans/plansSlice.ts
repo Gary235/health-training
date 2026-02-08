@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk, type PayloadAction } from '@reduxjs/toolkit';
-import type { MealPlan, TrainingPlan, PlanStatus, Meal, NutritionInfo } from '../../types';
+import type { MealPlan, TrainingPlan, PlanStatus, Meal, NutritionInfo, InstructionDetailLevel, Recipe } from '../../types';
 import { planRepository } from '../../services/db/repositories';
+import { getAIService } from '../../services/ai';
 
 interface PlansState {
   mealPlans: MealPlan[];
@@ -81,7 +82,11 @@ export const updateMealInPlan = createAsyncThunk(
       throw new Error('Meal not found in daily plan');
     }
 
-    dailyPlan.meals[mealIndex] = updatedMeal;
+    // Reset instructionsExpanded when meal is edited
+    dailyPlan.meals[mealIndex] = {
+      ...updatedMeal,
+      instructionsExpanded: false,
+    };
 
     // Recalculate daily nutrition totals
     const dailyNutrition: NutritionInfo = dailyPlan.meals.reduce(
@@ -144,6 +149,231 @@ export const updateTrainingPlanStatus = createAsyncThunk(
     return { planId, status };
   }
 );
+
+// Feature 1: Expand meal instructions
+export const expandMealInstructions = createAsyncThunk(
+  'plans/expandMealInstructions',
+  async ({
+    planId,
+    dayIndex,
+    mealId,
+    userProfile,
+  }: {
+    planId: string;
+    dayIndex: number;
+    mealId: string;
+    userProfile: any;
+  }) => {
+    // Load the plan from the database
+    const plan = await planRepository.getMealPlan(planId);
+    if (!plan) {
+      throw new Error('Meal plan not found');
+    }
+
+    const dailyPlan = plan.dailyPlans[dayIndex];
+    if (!dailyPlan) {
+      throw new Error('Day not found in meal plan');
+    }
+
+    const meal = dailyPlan.meals.find((m) => m.id === mealId);
+    if (!meal) {
+      throw new Error('Meal not found in daily plan');
+    }
+
+    // Call AI service to expand instructions (always to 'detailed' level)
+    const aiService = await getAIService();
+    const response = await aiService.expandInstructions({
+      recipe: meal.recipe,
+      targetLevel: 'detailed',
+      userProfile,
+    });
+
+    // Update recipe with detailed instructions
+    const updatedRecipe = {
+      ...meal.recipe,
+      detailedInstructions: response.instructions,
+      instructionLevel: 'detailed' as InstructionDetailLevel,
+      instructions: response.instructions.detailed,
+    };
+
+    const updatedMeal = {
+      ...meal,
+      recipe: updatedRecipe,
+      instructionsExpanded: true,
+    };
+
+    // Update meal in plan
+    const mealIndex = dailyPlan.meals.findIndex((m) => m.id === mealId);
+    dailyPlan.meals[mealIndex] = updatedMeal;
+
+    // Save to database
+    await planRepository.updateMealPlan(planId, { dailyPlans: plan.dailyPlans });
+
+    return { planId, dayIndex, mealId, updatedMeal };
+  }
+);
+
+// Feature 2: Generate meal variations
+export const generateMealVariations = createAsyncThunk(
+  'plans/generateMealVariations',
+  async ({
+    planId,
+    dayIndex,
+    mealId,
+    variationCount,
+    variationType,
+    userProfile,
+  }: {
+    planId: string;
+    dayIndex: number;
+    mealId: string;
+    variationCount: number;
+    variationType?: 'protein_swap' | 'vegetarian' | 'lower_calorie' | 'general';
+    userProfile: any;
+  }) => {
+    // Load the plan from the database
+    const plan = await planRepository.getMealPlan(planId);
+    if (!plan) {
+      throw new Error('Meal plan not found');
+    }
+
+    const dailyPlan = plan.dailyPlans[dayIndex];
+    if (!dailyPlan) {
+      throw new Error('Day not found in meal plan');
+    }
+
+    const meal = dailyPlan.meals.find((m) => m.id === mealId);
+    if (!meal) {
+      throw new Error('Meal not found in daily plan');
+    }
+
+    // Get daily meal context for nutrition constraints
+    const otherMeals = dailyPlan.meals.filter((m) => m.id !== mealId);
+    const dailyMealContext = {
+      otherMeals,
+      currentDailyNutrition: dailyPlan.dailyNutrition,
+      targetDailyNutrition: dailyPlan.dailyNutrition, // Could calculate from user goals
+    };
+
+    // Call AI service to generate variations
+    const aiService = await getAIService();
+    const response = await aiService.generateRecipeVariations({
+      recipe: meal.recipe,
+      userProfile,
+      variationCount,
+      variationType,
+      dailyMealContext,
+    });
+
+    // Mark original recipe as 'original' type
+    const originalRecipe = {
+      ...meal.recipe,
+      variantType: 'original' as const,
+    };
+
+    // Update meal with alternatives
+    const updatedMeal = {
+      ...meal,
+      recipe: originalRecipe,
+      alternatives: response.variations,
+    };
+
+    // Update meal in plan
+    const mealIndex = dailyPlan.meals.findIndex((m) => m.id === mealId);
+    dailyPlan.meals[mealIndex] = updatedMeal;
+
+    // Save to database
+    await planRepository.updateMealPlan(planId, { dailyPlans: plan.dailyPlans });
+
+    return { planId, dayIndex, mealId, updatedMeal };
+  }
+);
+
+// Feature 2: Switch meal recipe to a variation
+export const switchMealRecipe = createAsyncThunk(
+  'plans/switchMealRecipe',
+  async ({
+    planId,
+    dayIndex,
+    mealId,
+    recipeId,
+  }: {
+    planId: string;
+    dayIndex: number;
+    mealId: string;
+    recipeId: string;
+  }) => {
+    // Load the plan from the database
+    const plan = await planRepository.getMealPlan(planId);
+    if (!plan) {
+      throw new Error('Meal plan not found');
+    }
+
+    const dailyPlan = plan.dailyPlans[dayIndex];
+    if (!dailyPlan) {
+      throw new Error('Day not found in meal plan');
+    }
+
+    const meal = dailyPlan.meals.find((m) => m.id === mealId);
+    if (!meal) {
+      throw new Error('Meal not found in daily plan');
+    }
+
+    // Find the target recipe (either current or alternative)
+    let targetRecipe: Recipe | undefined;
+    if (meal.recipe.id === recipeId) {
+      targetRecipe = meal.recipe;
+    } else {
+      targetRecipe = meal.alternatives?.find((r) => r.id === recipeId);
+    }
+
+    if (!targetRecipe) {
+      throw new Error('Recipe not found');
+    }
+
+    // Update meal with new recipe
+    const updatedMeal = {
+      ...meal,
+      recipe: targetRecipe,
+      activeRecipeId: recipeId,
+      instructionsExpanded: false,
+    };
+
+    // Update meal in plan
+    const mealIndex = dailyPlan.meals.findIndex((m) => m.id === mealId);
+    dailyPlan.meals[mealIndex] = updatedMeal;
+
+    // Recalculate daily nutrition totals
+    const dailyNutrition: NutritionInfo = dailyPlan.meals.reduce(
+      (total, m) => ({
+        calories: total.calories + m.recipe.nutrition.calories,
+        protein: total.protein + m.recipe.nutrition.protein,
+        carbohydrates: total.carbohydrates + m.recipe.nutrition.carbohydrates,
+        fat: total.fat + m.recipe.nutrition.fat,
+        fiber: (total.fiber || 0) + (m.recipe.nutrition.fiber || 0),
+        sugar: (total.sugar || 0) + (m.recipe.nutrition.sugar || 0),
+        sodium: (total.sodium || 0) + (m.recipe.nutrition.sodium || 0),
+      }),
+      {
+        calories: 0,
+        protein: 0,
+        carbohydrates: 0,
+        fat: 0,
+        fiber: 0,
+        sugar: 0,
+        sodium: 0,
+      }
+    );
+
+    dailyPlan.dailyNutrition = dailyNutrition;
+
+    // Save to database
+    await planRepository.updateMealPlan(planId, { dailyPlans: plan.dailyPlans });
+
+    return { planId, dayIndex, mealId, updatedMeal, dailyNutrition };
+  }
+);
+
 
 const plansSlice = createSlice({
   name: 'plans',
@@ -265,6 +495,95 @@ const plansSlice = createSlice({
             state.activeTrainingPlan = null;
           }
         }
+      })
+      // Expand meal instructions
+      .addCase(expandMealInstructions.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(expandMealInstructions.fulfilled, (state, action) => {
+        state.loading = false;
+        const { planId, dayIndex, mealId, updatedMeal } = action.payload;
+
+        // Update in mealPlans array
+        const plan = state.mealPlans.find(p => p.id === planId);
+        if (plan && plan.dailyPlans[dayIndex]) {
+          const mealIndex = plan.dailyPlans[dayIndex].meals.findIndex(m => m.id === mealId);
+          if (mealIndex !== -1) {
+            plan.dailyPlans[dayIndex].meals[mealIndex] = updatedMeal;
+          }
+        }
+
+        // Update in activeMealPlan if it's the active one
+        if (state.activeMealPlan?.id === planId && state.activeMealPlan.dailyPlans[dayIndex]) {
+          const mealIndex = state.activeMealPlan.dailyPlans[dayIndex].meals.findIndex(m => m.id === mealId);
+          if (mealIndex !== -1) {
+            state.activeMealPlan.dailyPlans[dayIndex].meals[mealIndex] = updatedMeal;
+          }
+        }
+      })
+      .addCase(expandMealInstructions.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message || 'Failed to expand instructions';
+      })
+      // Generate meal variations
+      .addCase(generateMealVariations.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(generateMealVariations.fulfilled, (state, action) => {
+        state.loading = false;
+        const { planId, dayIndex, mealId, updatedMeal } = action.payload;
+
+        // Update in mealPlans array
+        const plan = state.mealPlans.find(p => p.id === planId);
+        if (plan && plan.dailyPlans[dayIndex]) {
+          const mealIndex = plan.dailyPlans[dayIndex].meals.findIndex(m => m.id === mealId);
+          if (mealIndex !== -1) {
+            plan.dailyPlans[dayIndex].meals[mealIndex] = updatedMeal;
+          }
+        }
+
+        // Update in activeMealPlan if it's the active one
+        if (state.activeMealPlan?.id === planId && state.activeMealPlan.dailyPlans[dayIndex]) {
+          const mealIndex = state.activeMealPlan.dailyPlans[dayIndex].meals.findIndex(m => m.id === mealId);
+          if (mealIndex !== -1) {
+            state.activeMealPlan.dailyPlans[dayIndex].meals[mealIndex] = updatedMeal;
+          }
+        }
+      })
+      .addCase(generateMealVariations.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message || 'Failed to generate variations';
+      })
+      // Switch meal recipe
+      .addCase(switchMealRecipe.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(switchMealRecipe.fulfilled, (state, action) => {
+        state.loading = false;
+        const { planId, dayIndex, mealId, updatedMeal, dailyNutrition } = action.payload;
+
+        // Update in mealPlans array
+        const plan = state.mealPlans.find(p => p.id === planId);
+        if (plan && plan.dailyPlans[dayIndex]) {
+          const mealIndex = plan.dailyPlans[dayIndex].meals.findIndex(m => m.id === mealId);
+          if (mealIndex !== -1) {
+            plan.dailyPlans[dayIndex].meals[mealIndex] = updatedMeal;
+            plan.dailyPlans[dayIndex].dailyNutrition = dailyNutrition;
+          }
+        }
+
+        // Update in activeMealPlan if it's the active one
+        if (state.activeMealPlan?.id === planId && state.activeMealPlan.dailyPlans[dayIndex]) {
+          const mealIndex = state.activeMealPlan.dailyPlans[dayIndex].meals.findIndex(m => m.id === mealId);
+          if (mealIndex !== -1) {
+            state.activeMealPlan.dailyPlans[dayIndex].meals[mealIndex] = updatedMeal;
+            state.activeMealPlan.dailyPlans[dayIndex].dailyNutrition = dailyNutrition;
+          }
+        }
+      })
+      .addCase(switchMealRecipe.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message || 'Failed to switch recipe';
       });
   },
 });

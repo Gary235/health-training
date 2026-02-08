@@ -3,6 +3,19 @@ export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack';
 export type ExerciseType = 'strength' | 'cardio' | 'flexibility' | 'balance' | 'mixed';
 export type IntensityLevel = 'low' | 'moderate' | 'high' | 'very_high';
 
+// Feature 1: Instruction Detail Levels
+export type InstructionDetailLevel = 'quick' | 'standard' | 'detailed';
+
+export interface RecipeInstructionSet {
+  quick: string[];      // 2-3 brief steps
+  standard: string[];   // 5-7 steps (default)
+  detailed: string[];   // 10-15 comprehensive steps
+}
+
+
+// Import CookingMethod from user.types to avoid duplication
+import type { CookingMethod } from './user.types';
+
 // Nutrition Types
 export interface NutritionInfo {
   calories: number;
@@ -23,6 +36,7 @@ export interface Ingredient {
 }
 
 export interface Recipe {
+  id?: string;  // Feature 2: unique identifier for tracking variants
   name: string;
   description: string;
   ingredients: Ingredient[];
@@ -32,6 +46,15 @@ export interface Recipe {
   servings: number;
   nutrition: NutritionInfo;
   tags?: string[];
+  // Feature 1: Instruction detail levels
+  instructionLevel?: InstructionDetailLevel;
+  detailedInstructions?: RecipeInstructionSet;
+  // Feature 2: Recipe variations
+  variantType?: 'original' | 'variation';
+  variantNotes?: string;  // Explain what changed (e.g., "Chicken → Tofu")
+  // Feature 4: Cooking methods
+  primaryCookingMethod?: CookingMethod;
+  cookingMethods?: CookingMethod[];
 }
 
 export interface Meal {
@@ -41,6 +64,10 @@ export interface Meal {
   recipe: Recipe;
   alternatives?: Recipe[];
   notes?: string;
+  // Feature 1: Track if instructions have been expanded
+  instructionsExpanded?: boolean;
+  // Feature 2: Track which recipe variant is active
+  activeRecipeId?: string;
 }
 
 export interface DailyMealPlan {

@@ -3,50 +3,71 @@ import type { Meal } from '../../types';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Textarea } from '../ui/textarea';
-import { Loader2 } from 'lucide-react';
+import LoadingOverlay from '../common/LoadingOverlay';
 
-interface EditMealDialogProps {
+type DialogState =
+  | { mode: 'input' }
+  | { mode: 'editing' }
+  | { mode: 'error'; message: string };
+
+interface MealEditorDialogProps {
   open: boolean;
   meal: Meal;
-  loading?: boolean;
-  error?: string | null;
-  onSave: (editInstructions: string) => void;
-  onCancel: () => void;
+  onClose: () => void;
+  onSaveMeal: (editInstructions: string) => Promise<void>;
 }
 
-export default function EditMealDialog({
+export default function MealEditorDialog({
   open,
   meal,
-  loading = false,
-  error = null,
-  onSave,
-  onCancel,
-}: EditMealDialogProps) {
+  onClose,
+  onSaveMeal,
+}: MealEditorDialogProps) {
+  const [state, setState] = useState<DialogState>({ mode: 'input' });
   const [editInstructions, setEditInstructions] = useState('');
 
   if (!open) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editInstructions.trim()) {
-      return;
-    }
-    onSave(editInstructions);
-  };
-
   const handleClose = () => {
+    setState({ mode: 'input' });
     setEditInstructions('');
-    onCancel();
+    onClose();
   };
 
+  const handleEditMeal = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!editInstructions.trim()) return;
+
+    setState({ mode: 'editing' });
+    try {
+      await onSaveMeal(editInstructions);
+      handleClose();
+    } catch (error) {
+      setState({
+        mode: 'error',
+        message: error instanceof Error ? error.message : 'Failed to edit meal',
+      });
+    }
+  };
+
+  // Render loading overlay
+  if (state.mode === 'editing') {
+    return (
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+        <LoadingOverlay show={true} text="Saving changes..." />
+      </div>
+    );
+  }
+
+  // Render input mode (default) or error state
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
       <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleEditMeal}>
           <CardHeader className="pb-4">
             <CardTitle className="text-xl">Edit Meal</CardTitle>
             <CardDescription className="text-base">
-              Request changes to this meal using natural language
+              Describe your changes and the AI will modify this meal
             </CardDescription>
           </CardHeader>
 
@@ -89,7 +110,6 @@ export default function EditMealDialog({
                 onChange={(e) => setEditInstructions(e.target.value)}
                 placeholder="Examples:&#10;• Make it vegetarian&#10;• Add more protein&#10;• Reduce calories to around 400&#10;• Replace chicken with fish&#10;• Make it spicier"
                 rows={6}
-                disabled={loading}
                 className="resize-none text-base bg-white text-neutral-900 placeholder:text-neutral-500"
               />
               {!editInstructions.trim() && (
@@ -100,9 +120,17 @@ export default function EditMealDialog({
             </div>
 
             {/* Error Message */}
-            {error && (
+            {state.mode === 'error' && (
               <div className="bg-red-50 border border-red-300 rounded-lg p-4">
-                <p className="text-sm text-red-900 font-medium">{error}</p>
+                <p className="text-sm text-red-900 font-medium">{state.message}</p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setState({ mode: 'input' })}
+                  className="mt-2"
+                >
+                  Try Again
+                </Button>
               </div>
             )}
           </CardContent>
@@ -112,24 +140,16 @@ export default function EditMealDialog({
               type="button"
               variant="secondary"
               onClick={handleClose}
-              disabled={loading}
               className="flex-1 h-10"
             >
               Cancel
             </Button>
             <Button
               type="submit"
-              disabled={loading || !editInstructions.trim()}
+              disabled={!editInstructions.trim()}
               className="flex-1 h-10 bg-neutral-900 text-white hover:bg-neutral-800"
             >
-              {loading ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Editing...
-                </>
-              ) : (
-                'Edit Meal'
-              )}
+              Edit Meal
             </Button>
           </CardFooter>
         </form>

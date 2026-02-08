@@ -40,6 +40,59 @@ export class HealthTrainingDatabase extends Dexie {
       shoppingLists: 'id, userId, mealPlanId, startDate, endDate, createdAt',
       settings: 'id',
     });
+
+    // Version 3: Add instruction levels, recipe variations, and external sources
+    this.version(3).stores({
+      userProfiles: 'id, createdAt, updatedAt',
+      mealPlans: 'id, userId, startDate, endDate, status, createdAt',
+      trainingPlans: 'id, userId, startDate, endDate, status, createdAt',
+      dailyLogs: 'id, userId, date, createdAt',
+      bodyMetrics: 'id, date',
+      shoppingLists: 'id, userId, mealPlanId, startDate, endDate, createdAt',
+      settings: 'id',
+    }).upgrade(async (tx) => {
+      // Migrate existing meal plans to add new fields
+      const mealPlans = await tx.table('mealPlans').toArray();
+
+      for (const plan of mealPlans) {
+        if (plan.dailyPlans) {
+          plan.dailyPlans.forEach((day: any) => {
+            if (day.meals) {
+              day.meals.forEach((meal: any, mealIndex: number) => {
+                // Set default instruction level to 'quick'
+                if (!meal.currentInstructionLevel) {
+                  meal.currentInstructionLevel = 'quick';
+                }
+
+                if (meal.recipe) {
+                  // Set recipe instruction level
+                  if (!meal.recipe.instructionLevel) {
+                    meal.recipe.instructionLevel = 'quick';
+                  }
+
+                  // Generate unique recipe ID if not present
+                  if (!meal.recipe.id) {
+                    meal.recipe.id = `recipe-${plan.id}-${day.date}-${mealIndex}`;
+                  }
+
+                  // Set active recipe ID
+                  if (!meal.activeRecipeId) {
+                    meal.activeRecipeId = meal.recipe.id;
+                  }
+                }
+              });
+            }
+          });
+        }
+      }
+
+      // Save updated meal plans
+      if (mealPlans.length > 0) {
+        await tx.table('mealPlans').bulkPut(mealPlans);
+      }
+
+      console.log(`[Database Migration v3] Migrated ${mealPlans.length} meal plans with new instruction level and recipe variation fields`);
+    });
   }
 }
 

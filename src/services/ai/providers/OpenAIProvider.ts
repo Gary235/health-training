@@ -10,8 +10,14 @@ import type {
   PlanAdjustmentRequest,
   MealEditRequest,
   MealEditResponse,
+  ExpandInstructionsRequest,
+  ExpandInstructionsResponse,
+  RecipeVariationRequest,
+  RecipeVariationResponse,
 } from '../../../types/ai.types';
 import { generateMealPlanPrompt, generateTrainingPlanPrompt, generateMealEditPrompt } from '../prompts';
+import { generateExpandInstructionsPrompt } from '../prompts/expandInstructionsPrompt';
+import { generateRecipeVariationPrompt } from '../prompts/recipeVariationPrompt';
 import { parseMealPlanResponse, parseTrainingPlanResponse, parseMealEditResponse } from '../parsers/planParser';
 
 export class OpenAIProvider extends BaseAIService {
@@ -168,6 +174,72 @@ export class OpenAIProvider extends BaseAIService {
       };
     } catch (error) {
       this.handleError(error, 'editMeal');
+    }
+  }
+
+  async expandInstructions(request: ExpandInstructionsRequest): Promise<ExpandInstructionsResponse> {
+    if (!this.client) {
+      throw new Error('OpenAI client not initialized');
+    }
+
+    try {
+      const { systemPrompt, userPrompt, responseFormat } = generateExpandInstructionsPrompt(request);
+
+      const completion = await this.client.chat.completions.create({
+        model: this.config.model || 'gpt-4-turbo-preview',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt },
+        ],
+        response_format: responseFormat as { type: 'json_object' },
+      });
+
+      const responseContent = completion.choices[0]?.message?.content;
+      if (!responseContent) {
+        throw new Error('Empty response from OpenAI');
+      }
+
+      const parsed = JSON.parse(responseContent);
+
+      return {
+        instructions: parsed.instructions,
+        notes: parsed.notes,
+      };
+    } catch (error) {
+      this.handleError(error, 'expandInstructions');
+    }
+  }
+
+  async generateRecipeVariations(request: RecipeVariationRequest): Promise<RecipeVariationResponse> {
+    if (!this.client) {
+      throw new Error('OpenAI client not initialized');
+    }
+
+    try {
+      const { systemPrompt, userPrompt, responseFormat } = generateRecipeVariationPrompt(request);
+
+      const completion = await this.client.chat.completions.create({
+        model: this.config.model || 'gpt-4-turbo-preview',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt },
+        ],
+        response_format: responseFormat as { type: 'json_object' },
+      });
+
+      const responseContent = completion.choices[0]?.message?.content;
+      if (!responseContent) {
+        throw new Error('Empty response from OpenAI');
+      }
+
+      const parsed = JSON.parse(responseContent);
+
+      return {
+        variations: parsed.variations || [],
+        notes: parsed.notes,
+      };
+    } catch (error) {
+      this.handleError(error, 'generateRecipeVariations');
     }
   }
 

@@ -5,6 +5,32 @@ export type DietaryRestriction = 'none' | 'vegetarian' | 'vegan' | 'pescatarian'
 export type GoalType = 'weight_loss' | 'weight_gain' | 'muscle_gain' | 'maintenance' | 'endurance' | 'strength' | 'flexibility';
 export type MeasurementSystem = 'metric' | 'imperial';
 
+// Feature 4: Cooking Method Preferences
+export type CookingMethod =
+  | 'baking' | 'frying' | 'grilling' | 'boiling' | 'steaming'
+  | 'roasting' | 'sauteing' | 'slow_cooking' | 'pressure_cooking'
+  | 'raw' | 'no_cook';
+
+export type CookingPreferenceLevel =
+  | 'avoid' | 'less' | 'normal' | 'more' | 'prefer';
+
+export interface CookingPreference {
+  method: CookingMethod;
+  level: CookingPreferenceLevel;
+}
+
+// Feature 5: Location-Based Preferences
+export type Region =
+  | 'north_america' | 'south_america' | 'europe'
+  | 'asia' | 'africa' | 'oceania' | 'middle_east';
+
+export interface UserLocation {
+  region: Region;
+  country?: string;
+  preferLocalIngredients: boolean;
+  culturalCuisines?: string[];
+}
+
 export interface BodySpecifications {
   height: number; // cm or inches based on measurementSystem
   weight: number; // kg or lbs based on measurementSystem
@@ -23,6 +49,12 @@ export interface UserPreferences {
   cuisinePreferences: string[];
   equipmentAvailable: string[]; // e.g., ['dumbbells', 'resistance_bands', 'pull_up_bar']
   workoutLocation: 'home' | 'gym' | 'outdoor' | 'mixed';
+  // Feature 4: Cooking preferences
+  cookingPreferences?: CookingPreference[];
+  maxCookTime?: number;  // minutes
+  maxPrepTime?: number;  // minutes
+  // Feature 5: Location preferences
+  location?: UserLocation;
 }
 
 export interface DayAvailability {

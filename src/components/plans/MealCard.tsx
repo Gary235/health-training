@@ -2,9 +2,16 @@ import { useState } from 'react';
 import type { Meal } from '../../types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
-import { Clock, ChefHat, Users, Pencil } from 'lucide-react';
-import EditMealDialog from './EditMealDialog';
-import { updateMealInPlan } from '../../features/plans/plansSlice';
+import { Clock, ChefHat, Users, Pencil, Repeat2 } from 'lucide-react';
+import MealEditorDialog from './MealEditorDialog';
+import MealAlternativesDialog from './MealAlternativesDialog';
+import InstructionExpandButton from './InstructionExpandButton';
+import {
+  updateMealInPlan,
+  expandMealInstructions,
+  generateMealVariations,
+  switchMealRecipe
+} from '../../features/plans/plansSlice';
 import { getAIService } from '../../services/ai/AIServiceFactory';
 import { useAppDispatch, useAppSelector } from '../../store';
 import { toast } from 'sonner';
@@ -16,72 +23,151 @@ interface MealCardProps {
 
 export default function MealCard({ meal, dayIndex }: MealCardProps) {
   const dispatch = useAppDispatch();
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
-  const [editError, setEditError] = useState<string | null>(null);
+  const [showMealEditor, setShowMealEditor] = useState(false);
+  const [showAlternatives, setShowAlternatives] = useState(false);
+  const [isExpandingInstructions, setIsExpandingInstructions] = useState(false);
+  const [isGeneratingAlternatives, setIsGeneratingAlternatives] = useState(false);
 
   const { recipe } = meal;
   const activeMealPlan = useAppSelector((state) => state.plans.activeMealPlan);
   const userProfile = useAppSelector((state) => state.user.profile);
 
-  const handleEditMeal = async (editInstructions: string) => {
+  const handleSaveMeal = async (editInstructions: string): Promise<void> => {
     if (!activeMealPlan || !userProfile) {
-      setEditError('Unable to edit meal: Missing plan or user profile');
-      return;
+      throw new Error('Unable to edit meal: Missing plan or user profile');
     }
 
-    setIsEditing(true);
-    setEditError(null);
+    // Get daily meal context
+    const dailyPlan = activeMealPlan.dailyPlans[dayIndex];
+    const otherMeals = dailyPlan.meals.filter((m: Meal) => m.id !== meal.id);
 
+    // Call AI service to edit the meal
+    const aiService = await getAIService();
+    const response = await aiService.editMeal({
+      meal,
+      userProfile,
+      editInstructions,
+      dailyMealContext: {
+        otherMeals,
+        currentDailyNutrition: dailyPlan.dailyNutrition,
+        targetDailyNutrition: dailyPlan.dailyNutrition,
+      },
+    });
+
+    // Dispatch Redux action to update the meal
+    await dispatch(
+      updateMealInPlan({
+        planId: activeMealPlan.id,
+        dayIndex,
+        mealId: meal.id,
+        updatedMeal: response.meal,
+      })
+    ).unwrap();
+
+    toast.success('Meal updated successfully!');
+  };
+
+  const handleExpandInstructions = async () => {
+    if (!activeMealPlan || !userProfile) return;
+
+    setIsExpandingInstructions(true);
     try {
-      // Get daily meal context
-      const dailyPlan = activeMealPlan.dailyPlans[dayIndex];
-      const otherMeals = dailyPlan.meals.filter((m: Meal) => m.id !== meal.id);
-
-      // Call AI service to edit the meal
-      const aiService = await getAIService();
-      const response = await aiService.editMeal({
-        meal,
-        userProfile,
-        editInstructions,
-        dailyMealContext: {
-          otherMeals,
-          currentDailyNutrition: dailyPlan.dailyNutrition,
-          targetDailyNutrition: dailyPlan.dailyNutrition, // TODO: Get from user profile calculation
-        },
-      });
-
-      // Dispatch Redux action to update the meal
       await dispatch(
-        updateMealInPlan({
+        expandMealInstructions({
           planId: activeMealPlan.id,
           dayIndex,
           mealId: meal.id,
-          updatedMeal: response.meal,
+          userProfile,
+        })
+      ).unwrap();
+      toast.success('Instructions expanded');
+    } catch (error) {
+      toast.error('Failed to expand instructions');
+    } finally {
+      setIsExpandingInstructions(false);
+    }
+  };
+
+  const handleGenerateAlternatives = async (): Promise<void> => {
+    if (!activeMealPlan || !userProfile) {
+      toast.error('Unable to generate alternatives: Missing plan or user profile');
+      return;
+    }
+
+    setIsGeneratingAlternatives(true);
+    try {
+      await dispatch(
+        generateMealVariations({
+          planId: activeMealPlan.id,
+          dayIndex,
+          mealId: meal.id,
+          variationCount: 2,
+          userProfile,
         })
       ).unwrap();
 
-      // Show success toast
-      toast.success('Meal updated successfully!');
-
-      // Close modal
-      setIsEditModalOpen(false);
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to edit meal';
-      setEditError(errorMessage);
-      toast.error(errorMessage);
+      toast.success('Recipe variations generated!');
+      // Automatically open the alternatives dialog after generation
+      setShowAlternatives(true);
+    } catch {
+      toast.error('Failed to generate alternatives');
     } finally {
-      setIsEditing(false);
+      setIsGeneratingAlternatives(false);
     }
   };
+
+  const handleSelectRecipe = async (recipeId: string): Promise<void> => {
+    if (!activeMealPlan) {
+      throw new Error('Unable to switch recipe: Missing plan');
+    }
+
+    await dispatch(
+      switchMealRecipe({
+        planId: activeMealPlan.id,
+        dayIndex,
+        mealId: meal.id,
+        recipeId,
+      })
+    ).unwrap();
+
+    toast.success('Recipe switched successfully!');
+  };
+
+  const hasAlternatives = meal.alternatives && meal.alternatives.length > 0;
 
   return (
     <>
       <Card>
         <CardHeader>
           <div className="flex justify-between items-start">
-            <div>
-              <CardTitle className="text-md">{recipe.name}</CardTitle>
+            <div className="flex-1">
+              <div className="flex items-center gap-2">
+                <CardTitle className="text-md">{recipe.name}</CardTitle>
+                {hasAlternatives ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowAlternatives(true)}
+                    className="h-6 px-2 text-xs"
+                    title={`${meal.alternatives!.length} alternative${meal.alternatives!.length > 1 ? 's' : ''} available`}
+                  >
+                    <Repeat2 className="w-3 h-3 mr-1" />
+                    {meal.alternatives!.length} alt{meal.alternatives!.length > 1 ? 's' : ''}
+                  </Button>
+                ) : (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleGenerateAlternatives}
+                    disabled={isGeneratingAlternatives}
+                    className="h-6 px-2 text-xs"
+                    title="Generate alternative recipes"
+                  >
+                    <Repeat2 className="w-3 h-3 mr-1" />
+                    {isGeneratingAlternatives ? 'Generating...' : 'Generate alts'}
+                  </Button>
+                )}
+              </div>
               <CardDescription className="capitalize">{meal.type} • {meal.scheduledTime}</CardDescription>
             </div>
             <div className="flex items-start gap-2">
@@ -94,7 +180,7 @@ export default function MealCard({ meal, dayIndex }: MealCardProps) {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => setIsEditModalOpen(true)}
+                onClick={() => setShowMealEditor(true)}
                 className="h-8 w-8 p-0"
                 title="Edit meal"
               >
@@ -122,12 +208,12 @@ export default function MealCard({ meal, dayIndex }: MealCardProps) {
         </div>
 
         <div>
-          <h4 className="font-semibold text-sm text-neutral-800 mb-2">Instructions</h4>
-          <ol className="text-sm space-y-2 list-decimal list-inside text-neutral-700">
-            {recipe.instructions.map((instruction, index) => (
-              <li key={index}>{instruction}</li>
-            ))}
-          </ol>
+          <InstructionExpandButton
+            instructions={recipe.instructions}
+            isExpanded={meal.instructionsExpanded || false}
+            isLoading={isExpandingInstructions}
+            onExpand={handleExpandInstructions}
+          />
         </div>
 
         <div className="flex gap-4 text-sm text-neutral-600 pt-2 border-t border-neutral-200">
@@ -144,19 +230,23 @@ export default function MealCard({ meal, dayIndex }: MealCardProps) {
             Servings: {recipe.servings}
           </span>
         </div>
+
       </CardContent>
     </Card>
 
-    <EditMealDialog
-      open={isEditModalOpen}
+    <MealEditorDialog
+      open={showMealEditor}
       meal={meal}
-      loading={isEditing}
-      error={editError}
-      onSave={handleEditMeal}
-      onCancel={() => {
-        setIsEditModalOpen(false);
-        setEditError(null);
-      }}
+      onClose={() => setShowMealEditor(false)}
+      onSaveMeal={handleSaveMeal}
+    />
+
+    <MealAlternativesDialog
+      open={showAlternatives}
+      meal={meal}
+      dayIndex={dayIndex}
+      onClose={() => setShowAlternatives(false)}
+      onSelectRecipe={handleSelectRecipe}
     />
   </>
   );

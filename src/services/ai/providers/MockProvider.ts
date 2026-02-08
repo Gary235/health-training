@@ -9,6 +9,10 @@ import type {
   PlanAdjustmentRequest,
   MealEditRequest,
   MealEditResponse,
+  ExpandInstructionsRequest,
+  ExpandInstructionsResponse,
+  RecipeVariationRequest,
+  RecipeVariationResponse,
 } from '../../../types/ai.types';
 import type { MealPlan, TrainingPlan } from '../../../types';
 
@@ -241,6 +245,73 @@ export class MockProvider extends BaseAIService {
     return {
       meal: editedMeal,
       editNotes: 'Edited by Mock Provider for testing',
+    };
+  }
+
+  async expandInstructions(_request: ExpandInstructionsRequest): Promise<ExpandInstructionsResponse> {
+    // Simulate API delay
+    await new Promise((resolve) => setTimeout(resolve, 800));
+
+    return {
+      instructions: {
+        quick: ['Mix ingredients', 'Cook as directed', 'Serve hot'],
+        standard: [
+          'Prepare all ingredients',
+          'Heat pan/oven to required temperature',
+          'Cook ingredients according to method',
+          'Check for doneness',
+          'Season to taste',
+          'Serve immediately',
+        ],
+        detailed: [
+          'Gather and measure all ingredients precisely',
+          'Preheat cooking equipment to specified temperature',
+          'Prepare ingredients (wash, chop, etc.)',
+          'Begin cooking process with proper technique',
+          'Monitor temperature and timing carefully',
+          'Adjust seasoning throughout cooking',
+          'Check for visual and tactile doneness cues',
+          'Remove from heat at optimal time',
+          'Let rest if needed',
+          'Plate attractively and serve',
+        ],
+      },
+      notes: 'Mock expanded instructions for testing',
+    };
+  }
+
+  async generateRecipeVariations(request: RecipeVariationRequest): Promise<RecipeVariationResponse> {
+    // Simulate API delay
+    await new Promise((resolve) => setTimeout(resolve, 1200));
+
+    const { recipe, variationCount } = request;
+    const variations = [];
+
+    for (let i = 0; i < variationCount; i++) {
+      variations.push({
+        id: `recipe-${uuidv4()}`,
+        name: `${recipe.name} (Variation ${i + 1})`,
+        description: `${recipe.description} - Modified version`,
+        ingredients: recipe.ingredients,
+        instructions: recipe.instructions,
+        instructionLevel: recipe.instructionLevel || 'quick',
+        prepTime: recipe.prepTime,
+        cookTime: recipe.cookTime,
+        servings: recipe.servings,
+        nutrition: {
+          calories: recipe.nutrition.calories + (i * 10 - 10),
+          protein: recipe.nutrition.protein + (i - 1),
+          carbohydrates: recipe.nutrition.carbohydrates + (i - 1),
+          fat: recipe.nutrition.fat + (i - 1),
+        },
+        variantType: 'variation' as const,
+        variantNotes: `Mock variation ${i + 1}: Changed ingredient ${i + 1}`,
+      });
+    }
+
+    return {
+      variations,
+      notes: 'Mock recipe variations for testing',
     };
   }
 

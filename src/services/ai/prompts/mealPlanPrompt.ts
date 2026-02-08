@@ -1,4 +1,5 @@
 import type { MealPlanRequest, GeneratedPrompt } from '../../../types/ai.types';
+import { regionalContextService } from '../../external/regionalContextService';
 
 export function generateMealPlanPrompt(request: MealPlanRequest): GeneratedPrompt {
   const { userProfile, startDate, durationDays, adjustmentContext } = request;
@@ -13,6 +14,13 @@ Your meal plans should:
 - Be practical to prepare with clear instructions
 - Consider meal timing relative to training schedule
 - Include detailed nutrition information
+
+IMPORTANT - TOKEN OPTIMIZATION (Feature 1):
+For efficiency, provide 'quick' level instructions (2-3 brief steps) for each recipe.
+Users can request more detailed instructions later for specific meals.
+Example quick instructions:
+- "Mix ingredients, pour into pan, bake at 350°F for 25 minutes"
+- "Sauté vegetables, add protein, season and serve over rice"
 
 Return the meal plan as a valid JSON object matching the MealPlan type structure.`;
 
@@ -33,6 +41,47 @@ Please adjust the plan to address these issues:
 ${adjustmentContext.specificRequests || 'Make appropriate adjustments based on the patterns above.'}`
     : '';
 
+  // Feature 4: Cooking preferences
+  const cookingPrefsText = preferences.cookingPreferences?.length
+    ? `\n\nCOOKING METHOD PREFERENCES:
+${preferences.cookingPreferences
+  .map((cp) => `- ${cp.method.replace('_', ' ')}: ${cp.level}`)
+  .join('\n')}
+
+For "avoid" methods, do not use them.
+For "less" methods, minimize use (max 1-2 meals per week).
+For "prefer" methods, prioritize when appropriate.
+${preferences.maxPrepTime ? `\n- Maximum prep time: ${preferences.maxPrepTime} minutes` : ''}
+${preferences.maxCookTime ? `- Maximum cook time: ${preferences.maxCookTime} minutes` : ''}`
+    : '';
+
+  // Feature 5: Location context
+  const locationText = preferences.location
+    ? `\n\nLOCATION & CULTURAL CONTEXT:
+- Region: ${preferences.location.region.replace('_', ' ')}
+${preferences.location.country ? `- Country: ${preferences.location.country}` : ''}
+- Prefer Local Ingredients: ${preferences.location.preferLocalIngredients}
+${preferences.location.culturalCuisines?.length ? `- Preferred Cuisines: ${preferences.location.culturalCuisines.join(', ')}` : ''}
+
+${regionalContextService.generateRegionalContext(
+  preferences.location.region,
+  preferences.location.preferLocalIngredients
+)}
+
+Consider regional ingredient availability and cultural food preferences.
+${
+  preferences.location.preferLocalIngredients
+    ? 'Prioritize ingredients commonly available in this region.'
+    : 'You may include international ingredients, but consider suggesting local alternatives.'
+}
+
+Suggest meals that:
+- Use ingredients familiar to people in ${preferences.location.region.replace('_', ' ')}
+- Incorporate local cooking styles when appropriate
+- Consider seasonal availability
+- Respect cultural food traditions`
+    : '';
+
   const userPrompt = `Create a ${durationDays}-day meal plan starting from ${startDate.toLocaleDateString()}.
 
 USER PROFILE:
@@ -47,7 +96,7 @@ DIETARY PREFERENCES:
 - Allergies: ${preferences.allergies.join(', ') || 'None'}
 - Likes: ${preferences.foodLikes.join(', ') || 'Various'}
 - Dislikes: ${preferences.foodDislikes.join(', ') || 'None'}
-- Cuisine Preferences: ${preferences.cuisinePreferences.join(', ') || 'Various'}
+- Cuisine Preferences: ${preferences.cuisinePreferences.join(', ') || 'Various'}${cookingPrefsText}${locationText}
 
 MEAL SCHEDULE:
 - Breakfast: ${schedule.mealTimes.breakfast || 'Flexible'}
@@ -66,7 +115,8 @@ Please generate a complete meal plan with:
 1. Daily meal plans for each day
 2. Each meal should include:
    - Recipe with name, description, ingredients (with amounts and units)
-   - Detailed cooking instructions
+   - Quick cooking instructions (2-3 brief steps)
+   - Primary cooking method (e.g., "baking", "grilling", "sauteing")
    - Prep and cook times
    - Nutrition information (calories, protein, carbs, fat)
    - Scheduled time
@@ -89,12 +139,15 @@ Return as JSON matching this structure:
           "type": "breakfast",
           "scheduledTime": "07:00",
           "recipe": {
+            "id": "recipe-[uuid]",
             "name": "Recipe Name",
             "description": "Brief description",
             "ingredients": [
               { "name": "ingredient", "amount": 100, "unit": "g", "calories": 200 }
             ],
-            "instructions": ["Step 1", "Step 2"],
+            "instructions": ["Quick step 1", "Quick step 2"],
+            "instructionLevel": "quick",
+            "primaryCookingMethod": "baking",
             "prepTime": 10,
             "cookTime": 15,
             "servings": 1,
@@ -104,7 +157,9 @@ Return as JSON matching this structure:
               "carbohydrates": 50,
               "fat": 15
             }
-          }
+          },
+          "currentInstructionLevel": "quick",
+          "activeRecipeId": "recipe-[uuid]"
         }
       ],
       "dailyNutrition": {

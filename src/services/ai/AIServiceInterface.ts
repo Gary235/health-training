@@ -9,6 +9,10 @@ import type {
   PlanAdjustmentRequest,
   MealEditRequest,
   MealEditResponse,
+  ExpandInstructionsRequest,
+  ExpandInstructionsResponse,
+  RecipeVariationRequest,
+  RecipeVariationResponse,
 } from '../../types/ai.types';
 
 export abstract class BaseAIService implements IAIService {
@@ -38,6 +42,10 @@ export abstract class BaseAIService implements IAIService {
   ): Promise<MealPlanResponse | TrainingPlanResponse>;
 
   abstract editMeal(request: MealEditRequest): Promise<MealEditResponse>;
+
+  abstract expandInstructions(request: ExpandInstructionsRequest): Promise<ExpandInstructionsResponse>;
+
+  abstract generateRecipeVariations(request: RecipeVariationRequest): Promise<RecipeVariationResponse>;
 
   abstract healthCheck(): Promise<boolean>;
 

@@ -67,6 +67,40 @@ export interface MealEditResponse {
   editNotes?: string;
 }
 
+// Feature 1: Expand Instructions Request/Response
+export interface ExpandInstructionsRequest {
+  recipe: any; // Recipe from plan.types.ts
+  targetLevel: 'quick' | 'standard' | 'detailed';
+  userProfile: UserProfile;
+}
+
+export interface ExpandInstructionsResponse {
+  instructions: {
+    quick: string[];
+    standard: string[];
+    detailed: string[];
+  };
+  notes?: string;
+}
+
+// Feature 2: Recipe Variation Request/Response
+export interface RecipeVariationRequest {
+  recipe: any; // Recipe from plan.types.ts
+  userProfile: UserProfile;
+  variationCount: number;
+  variationType?: 'protein_swap' | 'vegetarian' | 'lower_calorie' | 'general';
+  dailyMealContext?: {
+    otherMeals: any[];
+    currentDailyNutrition: any;
+    targetDailyNutrition: any;
+  };
+}
+
+export interface RecipeVariationResponse {
+  variations: any[]; // Array of Recipe variants
+  notes?: string;
+}
+
 export interface AIError {
   code: string;
   message: string;
@@ -87,6 +121,12 @@ export interface IAIService {
   adjustPlan(request: PlanAdjustmentRequest): Promise<MealPlanResponse | TrainingPlanResponse>;
 
   editMeal(request: MealEditRequest): Promise<MealEditResponse>;
+
+  // Feature 1: Expand meal instructions
+  expandInstructions(request: ExpandInstructionsRequest): Promise<ExpandInstructionsResponse>;
+
+  // Feature 2: Generate recipe variations
+  generateRecipeVariations(request: RecipeVariationRequest): Promise<RecipeVariationResponse>;
 
   healthCheck(): Promise<boolean>;
 }

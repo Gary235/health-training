@@ -8,6 +8,7 @@ import { Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 import { getSettings, updateSettings } from '../services/db/settingsService';
 import { switchAIProvider } from '../services/ai/AIServiceFactory';
+import LoadingOverlay from '../components/common/LoadingOverlay';
 import type { AppSettings } from '../types';
 import {
   SelectRoot,
@@ -68,14 +69,7 @@ export default function SettingsPage() {
   };
 
   if (loadingInitial) {
-    return (
-      <div className="min-h-screen bg-neutral-50 flex items-center justify-center p-4">
-        <div className="text-center">
-          <div className="text-xl font-semibold mb-2">Loading...</div>
-          <div className="text-sm text-muted-foreground">Loading settings...</div>
-        </div>
-      </div>
-    );
+    return <LoadingOverlay show={true} text="Loading settings..." />;
   }
 
   return (
