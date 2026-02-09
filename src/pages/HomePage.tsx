@@ -17,7 +17,7 @@ export default function HomePage() {
   const { activeMealPlan, activeTrainingPlan } = useAppSelector((state) => state.plans);
   const { logs } = useAppSelector((state) => state.logs);
   const { metrics, currentMetrics } = useAppSelector((state) => state.metrics);
-  const { todayMeals, todaySessions, todayLog, loading } = useDailyPlan();
+  const { todayMeals, todaySessions, todayLog } = useDailyPlan();
   const { analysis, needsAdjustment } = useAdaptivePlanning();
 
   const [weightChange, setWeightChange] = useState<number | null>(null);
@@ -115,10 +115,6 @@ export default function HomePage() {
   const today = new Date();
   const dayOfWeek = today.toLocaleDateString('en-US', { weekday: 'long' });
 
-  // Calculate completed items
-  const totalItems = todayMeals.length + todaySessions.length;
-  const completedItems = (todayLog?.mealLogs.length || 0) + (todayLog?.trainingLogs.length || 0);
-
   return (
     <div className="min-h-screen bg-neutral-50">
       <div className="max-w-7xl mx-auto">
@@ -127,7 +123,7 @@ export default function HomePage() {
           {/* Greeting Section - No border */}
           <div className="px-2 py-3">
             <div className="text-2xl font-semibold text-neutral-900">
-              👋 Hi, {profile.name || 'there'}
+              👋 Hi,  there
             </div>
             <div className="text-sm text-neutral-600 mt-1">
               Today · {dayOfWeek}
@@ -156,7 +152,7 @@ export default function HomePage() {
                           </div>
                           <div className="flex items-center gap-1 text-sm text-neutral-600">
                             <Clock className="w-4 h-4" />
-                            {todaySessions[0].estimatedDuration || 45} min
+                            {todaySessions[0].duration || 45} min
                           </div>
                         </div>
                       </div>
