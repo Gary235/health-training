@@ -39,10 +39,13 @@ export interface MealLog {
 }
 
 // Training Logging
+export type ExerciseDifficulty = 'possible' | 'difficult' | 'could_not_do';
+
 export interface ExerciseLog {
   exerciseId: string;
   exerciseName: string;
   completed: boolean;
+  difficulty?: ExerciseDifficulty; // Track how challenging the exercise was
   actualSets?: number;
   actualReps?: number[];
   actualWeight?: number[];

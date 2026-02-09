@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAppSelector, useAppDispatch } from '../store';
 import { loadActiveMealPlan } from '../features/plans/plansSlice';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
@@ -11,11 +11,13 @@ import type { DailyMealPlan, Meal } from '../types';
 
 export default function MealPlanPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const dispatch = useAppDispatch();
   const { activeMealPlan, loading } = useAppSelector((state) => state.plans);
   const profile = useAppSelector((state) => state.user.profile);
 
   const [selectedDayIndex, setSelectedDayIndex] = useState(0);
+  const [highlightMealId, setHighlightMealId] = useState<string | null>(null);
 
   useEffect(() => {
     if (profile) {
@@ -23,23 +25,32 @@ export default function MealPlanPage() {
     }
   }, [dispatch, profile]);
 
-  // Autoselect the current day when meal plan loads
+  // Autoselect the current day when meal plan loads, or use navigation state if provided
   useEffect(() => {
     if (activeMealPlan && activeMealPlan.dailyPlans.length > 0) {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
+      // Check if we have a date from navigation state
+      const state = location.state as { selectedDate?: Date; highlightMealId?: string };
+      const targetDate = state?.selectedDate ? new Date(state.selectedDate) : new Date();
+      targetDate.setHours(0, 0, 0, 0);
+
+      // Set highlight meal ID if provided
+      if (state?.highlightMealId) {
+        setHighlightMealId(state.highlightMealId);
+        // Clear the highlight after 3 seconds
+        setTimeout(() => setHighlightMealId(null), 3000);
+      }
 
       const currentDayIndex = activeMealPlan.dailyPlans.findIndex((day: DailyMealPlan) => {
         const dayDate = new Date(day.date);
         dayDate.setHours(0, 0, 0, 0);
-        return dayDate.getTime() === today.getTime();
+        return dayDate.getTime() === targetDate.getTime();
       });
 
       if (currentDayIndex !== -1) {
         setSelectedDayIndex(currentDayIndex);
       }
     }
-  }, [activeMealPlan]);
+  }, [activeMealPlan, location.state]);
 
   if (loading) {
     return <LoadingOverlay show={true} text="Loading meal plan..." />;
@@ -132,7 +143,12 @@ export default function MealPlanPage() {
             <div className="space-y-4">
               <h2 className="text-lg font-semibold text-neutral-800">Meals</h2>
               {selectedDay.meals.map((meal: Meal) => (
-                <MealCard key={meal.id} meal={meal} dayIndex={selectedDayIndex} />
+                <MealCard
+                  key={meal.id}
+                  meal={meal}
+                  dayIndex={selectedDayIndex}
+                  isHighlighted={highlightMealId === meal.id}
+                />
               ))}
             </div>
           </>

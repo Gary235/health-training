@@ -20,9 +20,10 @@ import { toast } from 'sonner';
 interface MealCardProps {
   meal: Meal;
   dayIndex: number;
+  isHighlighted?: boolean;
 }
 
-export default function MealCard({ meal, dayIndex }: MealCardProps) {
+export default function MealCard({ meal, dayIndex, isHighlighted }: MealCardProps) {
   const dispatch = useAppDispatch();
   const [showMealEditor, setShowMealEditor] = useState(false);
   const [showAlternatives, setShowAlternatives] = useState(false);
@@ -145,7 +146,7 @@ export default function MealCard({ meal, dayIndex }: MealCardProps) {
 
   return (
     <>
-      <Card>
+      <Card className={isHighlighted ? 'ring-2 ring-primary ring-offset-2 transition-all' : ''}>
         <CardHeader className="pb-3">
           {/* Title and Badge */}
           <div className="space-y-2">

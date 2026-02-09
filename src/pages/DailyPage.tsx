@@ -128,6 +128,7 @@ export default function DailyPage() {
                     meal={meal}
                     existingLog={getMealLog(meal.id)}
                     onLog={logMeal}
+                    mealDate={new Date()}
                   />
                 ))}
               </div>

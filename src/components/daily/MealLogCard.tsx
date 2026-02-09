@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import type { Meal, MealLog, AdherenceLevel, DeviationReason } from '../../types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
@@ -11,15 +12,26 @@ interface MealLogCardProps {
   meal: Meal;
   existingLog?: MealLog;
   onLog: (log: MealLog) => void;
+  mealDate?: Date; // The date this meal is scheduled for
 }
 
-export default function MealLogCard({ meal, existingLog, onLog }: MealLogCardProps) {
+export default function MealLogCard({ meal, existingLog, onLog, mealDate }: MealLogCardProps) {
+  const navigate = useNavigate();
   const [showDetails, setShowDetails] = useState(false);
   const [adherence, setAdherence] = useState<AdherenceLevel>(existingLog?.adherence || 'full');
   const [actualTime, setActualTime] = useState(existingLog?.actualTime || '');
   const [deviationReason, setDeviationReason] = useState<DeviationReason>('other');
   const [deviationDescription, setDeviationDescription] = useState('');
   const [portionScale, setPortionScale] = useState(existingLog?.portionScale || 1);
+
+  const handleMealClick = () => {
+    navigate('/plans/meal', {
+      state: {
+        selectedDate: mealDate || new Date(),
+        highlightMealId: meal.id,
+      },
+    });
+  };
 
   const handleLog = () => {
     const log: MealLog = {
@@ -61,9 +73,12 @@ export default function MealLogCard({ meal, existingLog, onLog }: MealLogCardPro
     <Card className={isLogged ? adherenceColor : ''}>
       <CardHeader>
         <div className="flex justify-between items-start">
-          <div>
+          <div className="flex-1">
             <CardTitle className="text-md capitalize">{meal.type}</CardTitle>
-            <CardDescription>
+            <CardDescription
+              onClick={handleMealClick}
+              className="cursor-pointer hover:text-primary hover:underline transition-colors"
+            >
               {meal.recipe.name} • {meal.scheduledTime}
             </CardDescription>
           </div>
