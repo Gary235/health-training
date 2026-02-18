@@ -49,6 +49,20 @@ ${
 }`
     : '';
 
+  // Meal Time Instructions
+  const mealTimeInstructionsText = preferences.mealTimeInstructions &&
+    (preferences.mealTimeInstructions.breakfast ||
+     preferences.mealTimeInstructions.lunch ||
+     preferences.mealTimeInstructions.dinner ||
+     preferences.mealTimeInstructions.snack)
+    ? `\n\n=== MEAL TIME INSTRUCTIONS (FOLLOW THESE FOR EACH MEAL TYPE) ===
+${preferences.mealTimeInstructions.breakfast ? `🍳 BREAKFAST: ${preferences.mealTimeInstructions.breakfast}` : ''}
+${preferences.mealTimeInstructions.lunch ? `🥗 LUNCH: ${preferences.mealTimeInstructions.lunch}` : ''}
+${preferences.mealTimeInstructions.dinner ? `🍽️ DINNER: ${preferences.mealTimeInstructions.dinner}` : ''}
+${preferences.mealTimeInstructions.snack ? `🍎 SNACKS: ${preferences.mealTimeInstructions.snack}` : ''}
+→ These instructions are CRITICAL and must be followed for every meal of that type.`
+    : '';
+
   const userPrompt = `Create a ${durationDays}-day meal plan starting ${startDate.toLocaleDateString()}.
 
 === USER TASTE (FOLLOW STRICTLY) ===
@@ -59,7 +73,7 @@ CUISINES: ${preferences.cuisinePreferences.length ? preferences.cuisinePreferenc
 
 === REQUIREMENTS ===
 Restrictions: ${preferences.dietaryRestrictions.join(', ') || 'None'}
-Allergies: ${preferences.allergies.join(', ') || 'None'}${cookingPrefsText}${locationText}
+Allergies: ${preferences.allergies.join(', ') || 'None'}${cookingPrefsText}${locationText}${mealTimeInstructionsText}
 
 === USER STATS ===
 ${bodySpecs.age}y ${bodySpecs.gender}, ${bodySpecs.height}${bodySpecs.measurementSystem === 'metric' ? 'cm' : 'in'}, ${bodySpecs.weight}${bodySpecs.measurementSystem === 'metric' ? 'kg' : 'lbs'}

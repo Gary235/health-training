@@ -139,6 +139,16 @@ export default function PreferencesForm({ value, onChange }: PreferencesFormProp
     });
   };
 
+  const handleMealTimeInstructionChange = (mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack', instruction: string) => {
+    onChange({
+      ...value,
+      mealTimeInstructions: {
+        ...value.mealTimeInstructions,
+        [mealType]: instruction.trim() || undefined,
+      },
+    });
+  };
+
   const handleAutoDetectRegion = () => {
     if (detectedRegion) {
       handleRegionChange(detectedRegion);
@@ -458,6 +468,87 @@ export default function PreferencesForm({ value, onChange }: PreferencesFormProp
               </div>
             </>
           )}
+        </div>
+      </div>
+
+      {/* Meal Time Instructions */}
+      <div className="space-y-4 border-t pt-6 mt-6">
+        <div>
+          <div className="text-lg font-semibold text-neutral-800">Meal Time Instructions</div>
+          <p className="text-sm text-neutral-600 mt-1 mb-2">
+            Tell the AI how you want each meal time to be planned. These instructions will be followed every time.
+          </p>
+          <div className="text-xs bg-blue-50 border border-blue-200 rounded-md p-3 text-blue-900">
+            <span className="font-medium">💡 Examples:</span>
+            <ul className="list-disc ml-4 mt-1 space-y-1">
+              <li>"Same overnight oats every day for meal prep"</li>
+              <li>"High protein lunches that can be eaten cold"</li>
+              <li>"Different cuisines each night, family portions"</li>
+              <li>"Quick grab-and-go snacks under 200 calories"</li>
+            </ul>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          {/* Breakfast Instructions */}
+          <div>
+            <Label htmlFor="breakfast-instructions" className="text-sm font-medium">
+              🍳 Breakfast Instructions (optional)
+            </Label>
+            <textarea
+              id="breakfast-instructions"
+              value={value.mealTimeInstructions?.breakfast || ''}
+              onChange={(e) => handleMealTimeInstructionChange('breakfast', e.target.value)}
+              placeholder="e.g., Same high-protein breakfast every day, easy to prep ahead"
+              className="mt-1 w-full min-h-[60px] p-2 border border-neutral-300 rounded-md"
+              rows={2}
+            />
+          </div>
+
+          {/* Lunch Instructions */}
+          <div>
+            <Label htmlFor="lunch-instructions" className="text-sm font-medium">
+              🥗 Lunch Instructions (optional)
+            </Label>
+            <textarea
+              id="lunch-instructions"
+              value={value.mealTimeInstructions?.lunch || ''}
+              onChange={(e) => handleMealTimeInstructionChange('lunch', e.target.value)}
+              placeholder="e.g., Office-friendly meals that can be eaten cold or reheated"
+              className="mt-1 w-full min-h-[60px] p-2 border border-neutral-300 rounded-md"
+              rows={2}
+            />
+          </div>
+
+          {/* Dinner Instructions */}
+          <div>
+            <Label htmlFor="dinner-instructions" className="text-sm font-medium">
+              🍽️ Dinner Instructions (optional)
+            </Label>
+            <textarea
+              id="dinner-instructions"
+              value={value.mealTimeInstructions?.dinner || ''}
+              onChange={(e) => handleMealTimeInstructionChange('dinner', e.target.value)}
+              placeholder="e.g., Different cuisines each night, family-style servings for 4"
+              className="mt-1 w-full min-h-[60px] p-2 border border-neutral-300 rounded-md"
+              rows={2}
+            />
+          </div>
+
+          {/* Snack Instructions */}
+          <div>
+            <Label htmlFor="snack-instructions" className="text-sm font-medium">
+              🍎 Snack Instructions (optional)
+            </Label>
+            <textarea
+              id="snack-instructions"
+              value={value.mealTimeInstructions?.snack || ''}
+              onChange={(e) => handleMealTimeInstructionChange('snack', e.target.value)}
+              placeholder="e.g., Healthy grab-and-go options under 200 calories"
+              className="mt-1 w-full min-h-[60px] p-2 border border-neutral-300 rounded-md"
+              rows={2}
+            />
+          </div>
         </div>
       </div>
     </div>

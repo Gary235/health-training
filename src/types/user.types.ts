@@ -31,6 +31,13 @@ export interface UserLocation {
   culturalCuisines?: string[];
 }
 
+export interface MealTimeInstructions {
+  breakfast?: string;
+  lunch?: string;
+  dinner?: string;
+  snack?: string;
+}
+
 export interface BodySpecifications {
   height: number; // cm or inches based on measurementSystem
   weight: number; // kg or lbs based on measurementSystem
@@ -55,6 +62,8 @@ export interface UserPreferences {
   maxPrepTime?: number;  // minutes
   // Feature 5: Location preferences
   location?: UserLocation;
+  // Meal time instructions
+  mealTimeInstructions?: MealTimeInstructions;
 }
 
 export interface DayAvailability {
