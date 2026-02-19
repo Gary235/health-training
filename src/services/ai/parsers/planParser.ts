@@ -1,13 +1,16 @@
 import type { MealPlan, TrainingPlan, Meal } from '../../../types';
 
-export function parseMealPlanResponse(response: string): MealPlan {
+export function parseMealPlanResponse(response: string, requestStartDate?: Date): MealPlan {
   try {
     const parsed = JSON.parse(response);
+
+    // Use the request startDate if provided, otherwise fall back to the AI response
+    const startDate = requestStartDate || new Date(parsed.startDate);
 
     // Convert date strings to Date objects
     const plan: MealPlan = {
       ...parsed,
-      startDate: new Date(parsed.startDate),
+      startDate,
       endDate: new Date(parsed.endDate),
       createdAt: new Date(parsed.createdAt || Date.now()),
       dailyPlans: parsed.dailyPlans.map((dp: any) => ({
@@ -23,14 +26,17 @@ export function parseMealPlanResponse(response: string): MealPlan {
   }
 }
 
-export function parseTrainingPlanResponse(response: string): TrainingPlan {
+export function parseTrainingPlanResponse(response: string, requestStartDate?: Date): TrainingPlan {
   try {
     const parsed = JSON.parse(response);
+
+    // Use the request startDate if provided, otherwise fall back to the AI response
+    const startDate = requestStartDate || new Date(parsed.startDate);
 
     // Convert date strings to Date objects
     const plan: TrainingPlan = {
       ...parsed,
-      startDate: new Date(parsed.startDate),
+      startDate,
       endDate: new Date(parsed.endDate),
       createdAt: new Date(parsed.createdAt || Date.now()),
       sessions: parsed.sessions.map((session: any) => ({

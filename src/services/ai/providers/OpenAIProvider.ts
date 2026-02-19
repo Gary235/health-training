@@ -68,7 +68,7 @@ export class OpenAIProvider extends BaseAIService {
         throw new Error('Empty response from OpenAI');
       }
 
-      const plan = parseMealPlanResponse(responseContent);
+      const plan = parseMealPlanResponse(responseContent, request.startDate);
 
       return {
         plan,
@@ -104,7 +104,7 @@ export class OpenAIProvider extends BaseAIService {
         throw new Error('Empty response from OpenAI');
       }
 
-      const plan = parseTrainingPlanResponse(responseContent);
+      const plan = parseTrainingPlanResponse(responseContent, request.startDate);
 
       return {
         plan,
