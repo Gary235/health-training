@@ -9,6 +9,7 @@ import { Button } from '../components/ui/button';
 import { useDailyPlan } from '../hooks/useDailyPlan';
 import { useAdaptivePlanning } from '../hooks/useAdaptivePlanning';
 import { Utensils, Dumbbell, TrendingUp, Scale, History, Clock, AlertCircle } from 'lucide-react';
+import { APP_VERSION, RELEASE_DATE } from '../constants/version';
 
 export default function HomePage() {
   const navigate = useNavigate();
@@ -125,8 +126,12 @@ export default function HomePage() {
             <div className="text-2xl font-semibold text-neutral-900">
               👋 Hi,  there
             </div>
-            <div className="text-sm text-neutral-600 mt-1">
-              Today · {dayOfWeek}
+            <div className="flex items-center gap-2 text-sm text-neutral-600 mt-1">
+              <span>Today · {dayOfWeek}</span>
+              <span>·</span>
+              <span className="text-xs bg-neutral-100 px-2 py-0.5 rounded-full font-medium">
+                v{APP_VERSION}
+              </span>
             </div>
           </div>
 
@@ -322,6 +327,20 @@ export default function HomePage() {
 
         {/* Desktop Layout - Keep original design */}
         <div className="hidden md:block p-6">
+          {/* Header with version */}
+          <div className="mb-6 flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-semibold text-neutral-900">Dashboard</h1>
+              <div className="flex items-center gap-2 text-sm text-neutral-600 mt-1">
+                <span>{dayOfWeek}, {today.toLocaleDateString()}</span>
+                <span>·</span>
+                <span className="text-xs bg-neutral-100 px-2 py-0.5 rounded-full font-medium">
+                  v{APP_VERSION}
+                </span>
+              </div>
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {/* Meal Plan Card */}
             <Card>

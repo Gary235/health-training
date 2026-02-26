@@ -39,11 +39,11 @@ export const loadActiveMealPlan = createAsyncThunk(
 export const saveMealPlan = createAsyncThunk(
   'plans/saveMealPlan',
   async (plan: MealPlan) => {
-    // If the new plan is active, deactivate any existing active plans
+    // If the new plan is active, archive any existing active plans
     if (plan.status === 'active') {
       const existingActivePlan = await planRepository.getActiveMealPlan(plan.userId);
       if (existingActivePlan) {
-        await planRepository.updateMealPlan(existingActivePlan.id, { status: 'inactive' });
+        await planRepository.updateMealPlan(existingActivePlan.id, { status: 'archived' });
       }
     }
 
@@ -145,11 +145,11 @@ export const loadActiveTrainingPlan = createAsyncThunk(
 export const saveTrainingPlan = createAsyncThunk(
   'plans/saveTrainingPlan',
   async (plan: TrainingPlan) => {
-    // If the new plan is active, deactivate any existing active plans
+    // If the new plan is active, archive any existing active plans
     if (plan.status === 'active') {
       const existingActivePlan = await planRepository.getActiveTrainingPlan(plan.userId);
       if (existingActivePlan) {
-        await planRepository.updateTrainingPlan(existingActivePlan.id, { status: 'inactive' });
+        await planRepository.updateTrainingPlan(existingActivePlan.id, { status: 'archived' });
       }
     }
 
@@ -438,11 +438,11 @@ const plansSlice = createSlice({
       })
       // Save meal plan
       .addCase(saveMealPlan.fulfilled, (state, action) => {
-        // If the new plan is active, deactivate the previous active plan in state
+        // If the new plan is active, archive the previous active plan in state
         if (action.payload.status === 'active' && state.activeMealPlan) {
           const previousActivePlan = state.mealPlans.find(p => p.id === state.activeMealPlan?.id);
           if (previousActivePlan) {
-            previousActivePlan.status = 'inactive';
+            previousActivePlan.status = 'archived';
           }
           state.activeMealPlan = action.payload;
         }
@@ -501,11 +501,11 @@ const plansSlice = createSlice({
       })
       // Save training plan
       .addCase(saveTrainingPlan.fulfilled, (state, action) => {
-        // If the new plan is active, deactivate the previous active plan in state
+        // If the new plan is active, archive the previous active plan in state
         if (action.payload.status === 'active' && state.activeTrainingPlan) {
           const previousActivePlan = state.trainingPlans.find(p => p.id === state.activeTrainingPlan?.id);
           if (previousActivePlan) {
-            previousActivePlan.status = 'inactive';
+            previousActivePlan.status = 'archived';
           }
           state.activeTrainingPlan = action.payload;
         }

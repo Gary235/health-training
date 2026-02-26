@@ -1,27 +1,30 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAppSelector, useAppDispatch } from '../store';
-import { loadActiveMealPlan } from '../features/plans/plansSlice';
+import { loadActiveMealPlan, loadMealPlans, updateMealPlanStatus } from '../features/plans/plansSlice';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Select } from '../components/ui/select';
 import MealCard from '../components/plans/MealCard';
 import LoadingOverlay from '../components/common/LoadingOverlay';
-import type { DailyMealPlan, Meal } from '../types';
+import { toast } from 'sonner';
+import type { DailyMealPlan, Meal, MealPlan } from '../types';
 
 export default function MealPlanPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const dispatch = useAppDispatch();
-  const { activeMealPlan, loading } = useAppSelector((state) => state.plans);
+  const { activeMealPlan, mealPlans, loading } = useAppSelector((state) => state.plans);
   const profile = useAppSelector((state) => state.user.profile);
 
   const [selectedDayIndex, setSelectedDayIndex] = useState(0);
   const [highlightMealId, setHighlightMealId] = useState<string | null>(null);
+  const [showAllPlans, setShowAllPlans] = useState(false);
 
   useEffect(() => {
     if (profile) {
       dispatch(loadActiveMealPlan(profile.id));
+      dispatch(loadMealPlans(profile.id));
     }
   }, [dispatch, profile]);
 
@@ -51,6 +54,38 @@ export default function MealPlanPage() {
       }
     }
   }, [activeMealPlan, location.state]);
+
+  const handleActivatePlan = async (planId: string) => {
+    if (!profile) return;
+
+    try {
+      // Archive the current active plan
+      if (activeMealPlan) {
+        await dispatch(updateMealPlanStatus({
+          planId: activeMealPlan.id,
+          status: 'archived'
+        })).unwrap();
+      }
+
+      // Activate the selected plan
+      await dispatch(updateMealPlanStatus({
+        planId,
+        status: 'active'
+      })).unwrap();
+
+      // Reload both the active plan and all plans to update the UI
+      await dispatch(loadActiveMealPlan(profile.id)).unwrap();
+      await dispatch(loadMealPlans(profile.id)).unwrap();
+
+      toast.success('Meal plan activated successfully!');
+      setShowAllPlans(false);
+    } catch (error) {
+      console.error('Failed to activate meal plan:', error);
+      toast.error('Failed to activate meal plan');
+    }
+  };
+
+  const otherPlans = mealPlans.filter(plan => plan.id !== activeMealPlan?.id);
 
   if (loading) {
     return <LoadingOverlay show={true} text="Loading meal plan..." />;
@@ -83,10 +118,55 @@ export default function MealPlanPage() {
           <Button variant="ghost" onClick={() => navigate('/')}>
             ← Back to Dashboard
           </Button>
-          <Button onClick={() => navigate('/plans/meal/generate')}>
-            Generate New Plan
-          </Button>
+          <div className="flex gap-2">
+            {otherPlans.length > 0 && (
+              <Button variant="outline" onClick={() => setShowAllPlans(!showAllPlans)}>
+                {showAllPlans ? 'Hide' : 'Show'} All Plans ({otherPlans.length})
+              </Button>
+            )}
+            <Button onClick={() => navigate('/plans/meal/generate')}>
+              Generate New Plan
+            </Button>
+          </div>
         </div>
+
+        {showAllPlans && otherPlans.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle>All Meal Plans</CardTitle>
+              <CardDescription>
+                Switch between your meal plans or activate a previous plan
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {otherPlans.map((plan: MealPlan) => (
+                  <div
+                    key={plan.id}
+                    className="flex items-center justify-between p-4 border border-neutral-200 rounded-lg hover:bg-neutral-50 transition-colors"
+                  >
+                    <div className="flex-1">
+                      <div className="font-medium text-neutral-900">{plan.name}</div>
+                      <div className="text-sm text-neutral-600">
+                        {new Date(plan.startDate).toLocaleDateString()} - {new Date(plan.endDate).toLocaleDateString()}
+                      </div>
+                      <div className="text-xs text-neutral-500 mt-1">
+                        Status: <span className="capitalize">{plan.status}</span> • {plan.dailyPlans.length} days
+                      </div>
+                    </div>
+                    <Button
+                      onClick={() => handleActivatePlan(plan.id)}
+                      disabled={loading}
+                      variant={plan.status === 'archived' ? 'default' : 'outline'}
+                    >
+                      {plan.status === 'active' ? 'Active' : 'Activate'}
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         <Card>
           <CardHeader>
