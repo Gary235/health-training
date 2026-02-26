@@ -73,10 +73,10 @@ export default function MetricsPage() {
     <div className="min-h-screen bg-neutral-50 p-4">
       <div className="max-w-6xl mx-auto space-y-6">
         <div className="flex justify-between items-center">
-          <Button variant="ghost" onClick={() => navigate('/')}>
+          <Button variant="ghost" onClick={() => navigate('/')} className="hidden md:inline-flex">
             ← Back to Dashboard
           </Button>
-          <Button onClick={() => setShowForm(!showForm)}>
+          <Button onClick={() => setShowForm(!showForm)} className="md:ml-auto">
             {showForm ? 'Cancel' : '+ Add Metrics'}
           </Button>
         </div>

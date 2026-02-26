@@ -115,10 +115,10 @@ export default function MealPlanPage() {
     <div className="min-h-screen bg-neutral-50 p-4">
       <div className="max-w-4xl mx-auto space-y-6">
         <div className="flex justify-between items-center">
-          <Button variant="ghost" onClick={() => navigate('/')}>
+          <Button variant="ghost" onClick={() => navigate('/')} className="hidden md:inline-flex">
             ← Back to Dashboard
           </Button>
-          <div className="flex gap-2">
+          <div className="flex gap-2 md:ml-auto">
             {otherPlans.length > 0 && (
               <Button variant="outline" onClick={() => setShowAllPlans(!showAllPlans)}>
                 {showAllPlans ? 'Hide' : 'Show'} All Plans ({otherPlans.length})

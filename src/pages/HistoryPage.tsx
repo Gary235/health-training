@@ -77,7 +77,7 @@ export default function HistoryPage() {
     <div className="min-h-screen bg-neutral-50 p-4">
       <div className="max-w-6xl mx-auto space-y-6">
         <div className="flex justify-between items-center">
-          <Button variant="ghost" onClick={() => navigate('/')}>
+          <Button variant="ghost" onClick={() => navigate('/')} className="hidden md:inline-flex">
             ← Back to Dashboard
           </Button>
         </div>

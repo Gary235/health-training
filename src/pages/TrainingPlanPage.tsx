@@ -56,10 +56,10 @@ export default function TrainingPlanPage() {
     <div className="min-h-screen bg-neutral-50 p-4">
       <div className="max-w-4xl mx-auto space-y-6">
         <div className="flex justify-between items-center">
-          <Button variant="ghost" onClick={() => navigate('/')}>
+          <Button variant="ghost" onClick={() => navigate('/')} className="hidden md:inline-flex">
             ← Back to Dashboard
           </Button>
-          <Button onClick={() => navigate('/plans/training/generate')}>
+          <Button onClick={() => navigate('/plans/training/generate')} className="md:ml-auto">
             Generate New Plan
           </Button>
         </div>

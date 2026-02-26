@@ -134,7 +134,7 @@ export default function ShoppingListPage() {
     <div className="min-h-screen bg-neutral-50 p-4">
       <div className="max-w-4xl mx-auto space-y-6">
         <div className="space-y-4">
-          <Button variant="ghost" onClick={() => navigate('/daily')}>
+          <Button variant="ghost" onClick={() => navigate('/daily')} className="hidden md:inline-flex">
             ← Back to Daily View
           </Button>
           <div className="flex gap-2 flex-wrap">

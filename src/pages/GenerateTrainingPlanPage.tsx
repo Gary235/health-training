@@ -135,7 +135,7 @@ export default function GenerateTrainingPlanPage() {
       <div className="min-h-screen bg-neutral-50 p-4">
         <div className="max-w-2xl mx-auto space-y-6">
           <div>
-            <Button variant="ghost" onClick={() => navigate('/')}>
+            <Button variant="ghost" onClick={() => navigate('/')} className="hidden md:inline-flex">
               ← Back to Dashboard
             </Button>
           </div>
