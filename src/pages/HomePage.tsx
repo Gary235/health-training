@@ -9,7 +9,7 @@ import { Button } from '../components/ui/button';
 import { useDailyPlan } from '../hooks/useDailyPlan';
 import { useAdaptivePlanning } from '../hooks/useAdaptivePlanning';
 import { Utensils, Dumbbell, TrendingUp, Scale, History, Clock, AlertCircle } from 'lucide-react';
-import { APP_VERSION, RELEASE_DATE } from '../constants/version';
+import { APP_VERSION } from '../constants/version';
 
 export default function HomePage() {
   const navigate = useNavigate();
